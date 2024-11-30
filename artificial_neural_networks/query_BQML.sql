@@ -1,0 +1,27 @@
+CREATE OR REPLACE MODEL
+  lending_club.red_neuronal OPTIONS( MODEL_TYPE = 'DNN_CLASSIFIER',
+    LEARN_RATE = HPARAM_RANGE(0.0001,
+      0.001),
+    OPTIMIZER = 'SGD',
+    ACTIVATION_FN = HPARAM_CANDIDATES(['RELU',
+      'RELU6',
+      'CRELU',
+      'ELU',
+      'SELU',
+      'SIGMOID',
+      'TANH']),
+    HIDDEN_UNITS = HPARAM_RANGE(4,
+      16),
+    DROPOUT = HPARAM_RANGE(0.01,
+      0.20),
+    DATA_SPLIT_METHOD = 'AUTO_SPLIT',
+    HPARAM_TUNING_ALGORITHM = 'RANDOM_SEARCH',
+    HPARAM_TUNING_OBJECTIVES = ['ROC_AUC'],
+    EARLY_STOP = TRUE,
+    AUTO_CLASS_WEIGHTS = TRUE,
+    NUM_TRIALS = 3,
+    INPUT_LABEL_COLS = ['loan_status'] ) AS
+SELECT
+  * EXCEPT(id)
+FROM
+  `anahuac-bi.lending_club.applications` 

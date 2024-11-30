@@ -9,7 +9,6 @@
    V8| % de ingreso en efectivo (continua) | Prof 
    V9| Mes del año (discreta) | Prof 
   */
-CREATE OR REPLACE TABLE churn_taxi.tad as 
 WITH
   catalogoTaxiMes AS (
   SELECT
@@ -193,63 +192,7 @@ WITH
     FROM
       `anahuac-bi.churn_taxi.viajes_reducida`
     GROUP BY
-      ALL) ),
-V6 as (
-     SELECT
-    id_taxi,
-    fh_mes,
-    SAFE_DIVIDE(SUM(c_distancia) OVER (PARTITION BY id_taxi ORDER BY fh_mes ROWS BETWEEN 5 PRECEDING AND 0 FOLLOWING), SUM(c_num_viajes) OVER (PARTITION BY id_taxi ORDER BY fh_mes ROWS BETWEEN 5 PRECEDING AND 0 FOLLOWING) ) AS c_distancia_promedio
-  FROM (
-    SELECT
-      id_taxi,
-      fh_mes,
-      sum(c_distancia) as c_distancia,
-      COUNT(*) AS c_num_viajes
-    FROM
-      `anahuac-bi.churn_taxi.viajes_reducida`
-    GROUP BY
-      ALL)     
-),
-V7 as (select id_taxi,fh_mes,d_empresa from (select *,row_number() over (partition by id_taxi,fh_mes,
-d_empresa ORDER BY c_num_viajes desc) as rn from 
-(select id_taxi,fh_mes,
-d_empresa,sum(c_num_viajes) as c_num_viajes
-from `anahuac-bi.churn_taxi.agg_cat`
-group by all 
-order by 1,2,3))
-where rn = 1),
-V8 as (select id_taxi,fh_mes, 
-safe_divide(sum(case when d_medio_pago='MP1' then c_total_viaje else 0 end),
-sum(c_total_viaje)) as c_pct_cash
-from `anahuac-bi.churn_taxi.agg_cat`
-group by all),
-V9 as (
-  select id_taxi,fh_mes,
-  extract(month from fh_mes) as d_mes
-  from `anahuac-bi.churn_taxi.agg_cat`
-),
-obj as (
-   
-    select id_taxi,fh_mes,case when sum(c_comp) over (partition by id_taxi order by fh_mes rows between 1 following and 3 following)>0 then 0 else 1 end as fuga from
-  (
-      SELECT
-        A.*,
-        COALESCE(B.c_comp,0) c_comp
-      FROM
-        catalogoTaxiMes A
-      LEFT JOIN (
-        SELECT
-          id_taxi,
-          fh_mes,
-          SUM(c_total_viaje+c_propinas) AS c_comp
-        FROM
-          churn_taxi.agg_cat
-        GROUP BY
-          ALL) B
-      USING
-        (id_taxi,
-          fh_mes))
-)
+      ALL) )
 SELECT
   *
 FROM
@@ -271,31 +214,6 @@ USING
     fh_mes)
 FULL OUTER JOIN
   V5
-USING
-  (id_taxi,
-    fh_mes)
-FULL OUTER JOIN
-  V6
-USING
-  (id_taxi,
-    fh_mes)
-FULL OUTER JOIN
-  V7
-USING
-  (id_taxi,
-    fh_mes)
-FULL OUTER JOIN
-  V8
-USING
-  (id_taxi,
-    fh_mes)
-  FULL OUTER JOIN
-  V9
-USING
-  (id_taxi,
-    fh_mes)
-  FULL OUTER JOIN
-  obj
 USING
   (id_taxi,
     fh_mes)

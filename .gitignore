@@ -1,1 +1,4 @@
 **/.venv
+**/lending_club.csv
+**/lending_club_clean.csv
+**/.DS_Store
